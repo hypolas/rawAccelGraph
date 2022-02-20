@@ -73,7 +73,6 @@ var tpl bytes.Buffer
 func main() {
 	fyneApp.App = app.New()
 	fyneApp.Window = fyneApp.App.NewWindow("Raw Accel Data generator by Nicolas HYPOLITE")
-	fyneApp.App.Settings().SetTheme(theme.DarkTheme())
 	rawAccel.Data = make(map[int]string)
 	rawAccel.DataBindingFloat = make(map[float64]binding.Float)
 	rawAccel.DataBindingString = make(map[float64]binding.String)
