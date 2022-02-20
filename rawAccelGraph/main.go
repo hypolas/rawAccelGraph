@@ -2,7 +2,6 @@ package main
 
 import (
 	"bytes"
-	"fmt"
 	"io/ioutil"
 	"os"
 	"strconv"
@@ -139,18 +138,21 @@ func result() *container.Scroll {
 
 func genGraph(loadFromSave bool) {
 	var collumnsInc float64
-	nbcollumns, _ := strconv.Atoi(set.Collumns.Text)
+	nbcollumns, err := strconv.Atoi(set.Collumns.Text)
+	errorDialog(err)
 	if set.Collumns.Text == "0" {
 		nbcollumns = 20
 		set.Collumns.SetText(strconv.Itoa(nbcollumns))
 	}
 
-	sizeAbisses, _ := strconv.Atoi(set.Abcisses.Text)
+	sizeAbisses, err := strconv.Atoi(set.Abcisses.Text)
+	errorDialog(err)
 	collumnsInc = float64(sizeAbisses) / float64(nbcollumns)
 	ui.RightContainer = *container.NewGridWithColumns(nbcollumns + 1)
 
 	increment := 1.0
-	sizeOrdonnee, _ := strconv.Atoi(set.Ordonnees.Text)
+	sizeOrdonnee, err := strconv.Atoi(set.Ordonnees.Text)
+	errorDialog(err)
 
 	for i := 0; i < nbcollumns+1; i++ {
 		currentInc := increment
@@ -160,7 +162,8 @@ func genGraph(loadFromSave bool) {
 		ui.Sliders[currentInc] = widget.NewSlider(0, float64(sizeOrdonnee))
 		ui.Sliders[currentInc].Orientation = 1
 		ui.Sliders[currentInc].Step = float64(sizeOrdonnee) / 2160
-		round, _ := strconv.Atoi(strconv.FormatFloat(increment, 'f', 0, 64))
+		round, err := strconv.Atoi(strconv.FormatFloat(increment, 'f', 0, 64))
+		errorDialog(err)
 
 		if loadFromSave && importConf.ConfGraph[currentInc] != 0 {
 			ui.Sliders[currentInc].Value = importConf.ConfGraph[currentInc]
@@ -202,8 +205,10 @@ func genGraph(loadFromSave bool) {
 
 func genAccelRaw() {
 	tpl := &bytes.Buffer{}
-	t, _ := template.New("").Parse(string(b))
-	_ = t.Execute(tpl, rawAccel.Data)
+	t, err := template.New("").Parse(string(b))
+	errorDialog(err)
+	err = t.Execute(tpl, rawAccel.Data)
+	errorDialog(err)
 	set.Result.SetText(tpl.String())
 }
 
@@ -255,7 +260,8 @@ func saveConfig() {
 		}
 	}
 
-	cfg, _ := yaml.Marshal(exportConf)
+	cfg, err := yaml.Marshal(exportConf)
+	errorDialog(err)
 	ioutil.WriteFile("configs/current.yml", cfg, 0755)
 }
 
@@ -272,22 +278,27 @@ func listConfigs() []string {
 		return nil
 	})
 
-	if err != nil {
-		panic(err)
-	}
+	errorDialog(err)
+
 	return files
 }
 
 func loadConfig(conf string) {
-	cfg, _ := ioutil.ReadFile("configs/" + conf)
+	cfg, err := ioutil.ReadFile("configs/" + conf)
+	errorDialog(err)
 	yaml.Unmarshal(cfg, &importConf)
 	set.Abcisses.Text = importConf.ConfAbcisses
-	fmt.Println(set.Abcisses.Text)
 	set.Ordonnees.Text = importConf.ConfOrdonnee
-	fmt.Println(set.Ordonnees.Text)
 	set.Collumns.Text = importConf.ConfCollumns
 	set.Result.Text = importConf.ConfResult
 	set.Result.Refresh()
 	genGraph(true)
 	ui.LeftContainer.Refresh()
+}
+
+func errorDialog(err error) {
+	if err != nil {
+		errorDial := dialog.NewError(err, fyneApp.Window)
+		errorDial.Show()
+	}
 }
