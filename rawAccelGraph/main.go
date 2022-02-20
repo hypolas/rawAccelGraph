@@ -251,6 +251,7 @@ func saveConfig() {
 }
 
 func listConfigs() []string {
+	_ = os.Mkdir("configs/", 0755)
 	var files []string
 
 	root := "configs/"
