@@ -75,9 +75,13 @@ func init() {
 }
 
 func main() {
+	//Global App et Window setting
 	fyneApp.App = app.New()
 	fyneApp.Window = fyneApp.App.NewWindow("Raw Accel Data generator by Nicolas HYPOLITE")
 	fyneApp.App.Settings().SetTheme(theme.DarkTheme())
+	fyneApp.Window.SetIcon(resourceIconPng)
+
+	// Init some vars
 	rawAccel.Data = make(map[int]string)
 	rawAccel.DataBindingFloat = make(map[float64]binding.Float)
 	rawAccel.DataBindingString = make(map[float64]binding.String)
@@ -86,6 +90,7 @@ func main() {
 	ui.LabelSlider = make(map[float64]*canvas.Text)
 	ui.SliderAbs = make(map[float64]*canvas.Text)
 
+	////////
 	ui.LeftContainer = container.NewVBox(settings(), &widget.Separator{}, genUIConfig(), result())
 	genGraph(false)
 
@@ -203,7 +208,7 @@ func genAccelRaw() {
 }
 
 func createMenu() *fyne.MainMenu {
-	aboutInfo := dialog.NewInformation("About", "Graph data generator for best mouse accell software\n raw Accel", fyneApp.Window)
+	aboutInfo := dialog.NewInformation("About", "Graph data generator for best Mouse Accel software\n \"Raw Accel\"", fyneApp.Window)
 
 	about := &fyne.MenuItem{
 		Label: "About",
