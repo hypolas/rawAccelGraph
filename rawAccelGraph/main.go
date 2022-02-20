@@ -127,9 +127,8 @@ func settings() *widget.Form {
 func result() *container.Scroll {
 	set.Result = widget.NewMultiLineEntry()
 	set.Result.PlaceHolder = "Data to copy in rawAccel"
-	set.Result.Resize(fyne.Size{Width: 200, Height: 600})
 	scroll := container.NewVScroll(set.Result)
-	scroll.SetMinSize(fyne.Size{Height: 600})
+	scroll.SetMinSize(fyne.Size{Height: 300})
 	return scroll
 }
 
