@@ -70,6 +70,10 @@ var b []byte
 
 var tpl bytes.Buffer
 
+func init() {
+	os.Setenv("FYNE_THEME", "dark")
+}
+
 func main() {
 	fyneApp.App = app.New()
 	fyneApp.Window = fyneApp.App.NewWindow("Raw Accel Data generator by Nicolas HYPOLITE")
