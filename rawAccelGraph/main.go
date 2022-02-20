@@ -97,7 +97,7 @@ func main() {
 	result := container.NewHSplit(ui.LeftContainer, &ui.RightContainer)
 	result.Offset = 0.1
 
-	fyneApp.Window.Resize(fyne.NewSize(1000, 800))
+	fyneApp.Window.Resize(fyne.NewSize(1000, 600))
 
 	fyneApp.Window.SetMainMenu(createMenu())
 	fyneApp.Window.SetContent(result)
