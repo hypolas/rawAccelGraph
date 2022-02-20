@@ -1,4 +1,3 @@
-{{ 
-range $key, $value := . }}
+{{ range $key, $value := . }}
 {{- $key }},{{"\t\t"}}{{ $value }};
 {{ end }}
