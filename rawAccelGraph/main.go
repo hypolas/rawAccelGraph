@@ -27,6 +27,7 @@ import (
 type Graph struct {
 	LeftContainer  *fyne.Container
 	RightContainer fyne.Container
+	RightBottom    fyne.Container
 	LabelSlider    map[float64]*canvas.Text
 	Sliders        map[float64]*widget.Slider
 	SliderAbs      map[float64]*canvas.Text
@@ -110,9 +111,9 @@ func main() {
 	fyneApp.Window.ShowAndRun()
 }
 
-func settings() *widget.Form {
+func settings() *fyne.Container {
 	set.Collumns = widget.NewEntry()
-	set.Collumns.Text = "0"
+	set.Collumns.Text = "15"
 
 	set.Abcisses = widget.NewEntry()
 	set.Abcisses.Text = "251"
@@ -135,15 +136,28 @@ func settings() *widget.Form {
 			ui.RightContainer.Refresh()
 		},
 	}
-	return form
+	largeur := container.NewHScroll(form)
+	largeur.SetMinSize(fyne.Size{Width: 170})
+	returnCon := container.NewVBox(largeur)
+	return returnCon
 }
 
-func result() *container.Scroll {
+func result() *fyne.Container {
 	set.Result = widget.NewMultiLineEntry()
 	set.Result.PlaceHolder = "Data to copy in rawAccel"
 	scroll := container.NewVScroll(set.Result)
 	scroll.SetMinSize(fyne.Size{Height: 300})
-	return scroll
+
+	bottomBox := container.NewHBox(
+		&widget.Separator{},
+		widget.NewButtonWithIcon("Copy", theme.ContentCopyIcon(), func() {
+			fyneApp.Window.Clipboard().SetContent(set.Result.Text)
+		}),
+	)
+
+	result := container.NewVBox(scroll, container.NewCenter(bottomBox))
+
+	return result
 }
 
 func genGraph(loadFromSave bool) {
@@ -204,9 +218,13 @@ func genGraph(loadFromSave bool) {
 		ui.SliderAbs[currentInc] = canvas.NewText(strconv.FormatFloat(increment, 'f', 0, 64), theme.TextColor())
 		ui.SliderAbs[currentInc].TextSize = 12
 
-		ui.RightContainer.Add(container.NewMax(ui.Sliders[currentInc],
-			container.NewVBox(ui.SliderAbs[currentInc],
-				ui.LabelSlider[currentInc])))
+		splitCont := container.NewVSplit(container.NewPadded(ui.Sliders[currentInc]),
+			container.NewVBox(container.NewCenter(ui.SliderAbs[currentInc]),
+				container.NewCenter(ui.LabelSlider[currentInc])))
+		splitCont.Offset = 0.99
+
+		ui.RightContainer.Add(splitCont)
+
 		increment = increment + collumnsInc
 	}
 
