@@ -1,6 +1,6 @@
 # What is ?
 
-This sofware is for generate data graph for software Raw Accel:
+This software is for generate data graph for Raw Accel:
 https://github.com/a1xd/rawaccel
 
 # rawAccelGraph
