@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"os/exec"
+	"runtime"
 	"strconv"
 
 	_ "embed"
@@ -150,12 +152,19 @@ func result() *fyne.Container {
 
 	bottomBox := container.NewHBox(
 		&widget.Separator{},
-		widget.NewButtonWithIcon("Copy", theme.ContentCopyIcon(), func() {
+		widget.NewButtonWithIcon("   Copy   ", theme.ContentCopyIcon(), func() {
 			fyneApp.Window.Clipboard().SetContent(set.Result.Text)
 		}),
 	)
 
-	result := container.NewVBox(scroll, container.NewCenter(bottomBox))
+	aCoffe := container.NewHBox(
+		&widget.Separator{},
+		widget.NewButtonWithIcon("Give a coffe", theme.VisibilityIcon(), func() {
+			openURL("https://www.buymeacoffee.com/laslite")
+		}),
+	)
+
+	result := container.NewVBox(scroll, container.NewCenter(bottomBox), container.NewCenter(aCoffe))
 
 	return result
 }
@@ -346,4 +355,22 @@ func errorDialog(err error) {
 		errorDial := dialog.NewError(err, fyneApp.Window)
 		errorDial.Show()
 	}
+}
+
+func openURL(url string) {
+	var err error
+	switch runtime.GOOS {
+	case "linux":
+		err = exec.Command("xdg-open", url).Start()
+	case "windows":
+		err = exec.Command("rundll32", "url.dll,FileProtocolHandler", url).Start()
+	case "darwin":
+		err = exec.Command("open", url).Start()
+	default:
+		err = fmt.Errorf("unsupported platform")
+		errorDialog(err)
+	}
+	errorDialog(err)
+	cmd := exec.Command("open", url)
+	cmd.Start()
 }
