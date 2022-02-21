@@ -173,7 +173,7 @@ func genGraph(loadFromSave bool) {
 		round, err := strconv.Atoi(strconv.FormatFloat(increment, 'f', 0, 64))
 		errorDialog(err)
 
-		if loadFromSave && importConf.ConfGraph[currentInc] != float64(sizeOrdonnee) {
+		if loadFromSave && importConf.ConfGraph[currentInc] != min {
 			ui.Sliders[currentInc].Value = importConf.ConfGraph[currentInc]
 			cordon := strconv.FormatFloat(importConf.ConfGraph[currentInc], 'f', 2, 64)
 			rawAccel.Data[round] = cordon
@@ -183,7 +183,7 @@ func genGraph(loadFromSave bool) {
 			ui.LabelSlider[currentInc].Text = strconv.FormatFloat(f, 'f', 3, 64)
 			ui.LabelSlider[currentInc].Refresh()
 			min, _ := strconv.ParseFloat(set.OrdonneesMin.Text, 8)
-			if f == min || 0 == f {
+			if f == min {
 				delete(rawAccel.Data, round)
 			} else {
 				cordon := strconv.FormatFloat(f, 'f', 3, 64)
