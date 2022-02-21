@@ -7,9 +7,10 @@ import (
 	"strconv"
 
 	_ "embed"
-	"fyne.io/fyne/v2/dialog"
 	"path/filepath"
 	"text/template"
+
+	"fyne.io/fyne/v2/dialog"
 
 	"gopkg.in/yaml.v3"
 
@@ -89,9 +90,11 @@ func main() {
 	ui.LabelSlider = make(map[float64]*canvas.Text)
 	ui.SliderAbs = make(map[float64]*canvas.Text)
 
-	////////
 	ui.LeftContainer = container.NewVBox(settings(), &widget.Separator{}, genUIConfig(), result())
 	genGraph(false)
+
+	// Load Default Config
+	loadConfig("current.yml")
 
 	result := container.NewHSplit(ui.LeftContainer, &ui.RightContainer)
 	result.Offset = 0.1
@@ -138,8 +141,13 @@ func result() *container.Scroll {
 
 func genGraph(loadFromSave bool) {
 	var collumnsInc float64
-	nbcollumns, err := strconv.Atoi(set.Collumns.Text)
-	errorDialog(err)
+	var nbcollumns int
+	if loadFromSave {
+		nbcollumns, _ = strconv.Atoi(importConf.ConfCollumns)
+	} else {
+		nbcollumns, _ = strconv.Atoi(set.Collumns.Text)
+	}
+
 	if set.Collumns.Text == "0" {
 		nbcollumns = 20
 		set.Collumns.SetText(strconv.Itoa(nbcollumns))
@@ -183,8 +191,8 @@ func genGraph(loadFromSave bool) {
 			genAccelRaw()
 		}
 
-		if loadFromSave && importConf.ConfGraph[currentInc] != 0 {
-			ui.LabelSlider[currentInc].Text = strconv.FormatFloat(importConf.ConfGraph[currentInc], 'f', 2, 64)
+		if _, ok := importConf.ConfGraph[currentInc]; ok && loadFromSave && importConf.ConfGraph[currentInc] != 0 {
+			ui.LabelSlider[currentInc] = canvas.NewText(strconv.FormatFloat(importConf.ConfGraph[currentInc], 'f', 2, 64), theme.TextColor())
 		} else {
 			ui.LabelSlider[currentInc] = canvas.NewText("0.00", theme.TextColor())
 		}
@@ -288,12 +296,14 @@ func loadConfig(conf string) {
 	errorDialog(err)
 	yaml.Unmarshal(cfg, &importConf)
 	set.Abcisses.Text = importConf.ConfAbcisses
+	set.Abcisses.Refresh()
 	set.Ordonnees.Text = importConf.ConfOrdonnee
+	set.Ordonnees.Refresh()
 	set.Collumns.Text = importConf.ConfCollumns
+	set.Collumns.Refresh()
 	set.Result.Text = importConf.ConfResult
 	set.Result.Refresh()
 	genGraph(true)
-	ui.LeftContainer.Refresh()
 }
 
 func errorDialog(err error) {
