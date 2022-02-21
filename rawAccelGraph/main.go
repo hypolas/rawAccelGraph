@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"fmt"
 	"io/ioutil"
 	"os"
 	"strconv"
@@ -32,10 +33,11 @@ type Graph struct {
 }
 
 type Settings struct {
-	Collumns  *widget.Entry
-	Abcisses  *widget.Entry
-	Ordonnees *widget.Entry
-	Result    *widget.Entry
+	Collumns     *widget.Entry
+	Abcisses     *widget.Entry
+	OrdonneesMax *widget.Entry
+	OrdonneesMin *widget.Entry
+	Result       *widget.Entry
 }
 
 type RawAccelData struct {
@@ -47,11 +49,12 @@ type RawAccelData struct {
 }
 
 type Config struct {
-	ConfAbcisses string
-	ConfOrdonnee string
-	ConfCollumns string
-	ConfResult   string
-	ConfGraph    map[float64]float64
+	ConfAbcisses     string
+	ConfOrdonneesMax string
+	ConfOrdonneesMin string
+	ConfCollumns     string
+	ConfResult       string
+	ConfGraph        map[float64]float64
 }
 
 type FyneApp struct {
@@ -114,14 +117,18 @@ func settings() *widget.Form {
 	set.Abcisses = widget.NewEntry()
 	set.Abcisses.Text = "251"
 
-	set.Ordonnees = widget.NewEntry()
-	set.Ordonnees.Text = "2"
+	set.OrdonneesMax = widget.NewEntry()
+	set.OrdonneesMax.Text = "2"
+
+	set.OrdonneesMin = widget.NewEntry()
+	set.OrdonneesMin.Text = "0.17"
 
 	form := &widget.Form{
 		Items: []*widget.FormItem{
 			{Text: "Precize", Widget: set.Collumns},
 			{Text: "Input Speed", Widget: set.Abcisses},
-			{Text: "Ratio of Output", Widget: set.Ordonnees}},
+			{Text: "Ratio Min", Widget: set.OrdonneesMin},
+			{Text: "Ratio Max", Widget: set.OrdonneesMax}},
 		OnSubmit: func() {
 			rawAccel.Data = map[int]string{}
 			genGraph(false)
@@ -142,16 +149,8 @@ func result() *container.Scroll {
 func genGraph(loadFromSave bool) {
 	var collumnsInc float64
 	var nbcollumns int
-	if loadFromSave {
-		nbcollumns, _ = strconv.Atoi(importConf.ConfCollumns)
-	} else {
-		nbcollumns, _ = strconv.Atoi(set.Collumns.Text)
-	}
 
-	if set.Collumns.Text == "0" {
-		nbcollumns = 20
-		set.Collumns.SetText(strconv.Itoa(nbcollumns))
-	}
+	nbcollumns, _ = strconv.Atoi(set.Collumns.Text)
 
 	sizeAbisses, err := strconv.Atoi(set.Abcisses.Text)
 	errorDialog(err)
@@ -159,42 +158,45 @@ func genGraph(loadFromSave bool) {
 	ui.RightContainer = *container.NewGridWithColumns(nbcollumns + 1)
 
 	increment := 1.0
-	sizeOrdonnee, err := strconv.Atoi(set.Ordonnees.Text)
+	sizeOrdonnee, err := strconv.Atoi(set.OrdonneesMax.Text)
 	errorDialog(err)
 
 	for i := 0; i < nbcollumns+1; i++ {
 		currentInc := increment
 
 		rawAccel.DataBindingFloat[currentInc] = binding.NewFloat()
-
-		ui.Sliders[currentInc] = widget.NewSlider(0, float64(sizeOrdonnee))
+		min, _ := strconv.ParseFloat(set.OrdonneesMin.Text, 8)
+		ui.Sliders[currentInc] = widget.NewSlider(min, float64(sizeOrdonnee))
 		ui.Sliders[currentInc].Orientation = 1
 		ui.Sliders[currentInc].Step = float64(sizeOrdonnee) / 2160
+		ui.Sliders[currentInc].Refresh()
 		round, err := strconv.Atoi(strconv.FormatFloat(increment, 'f', 0, 64))
 		errorDialog(err)
 
-		if loadFromSave && importConf.ConfGraph[currentInc] != 0 {
+		if loadFromSave && importConf.ConfGraph[currentInc] != float64(sizeOrdonnee) {
 			ui.Sliders[currentInc].Value = importConf.ConfGraph[currentInc]
 			cordon := strconv.FormatFloat(importConf.ConfGraph[currentInc], 'f', 2, 64)
 			rawAccel.Data[round] = cordon
 		}
 
 		ui.Sliders[currentInc].OnChanged = func(f float64) {
-			ui.LabelSlider[currentInc].Text = strconv.FormatFloat(f, 'f', 2, 64)
+			ui.LabelSlider[currentInc].Text = strconv.FormatFloat(f, 'f', 3, 64)
 			ui.LabelSlider[currentInc].Refresh()
-			if f == 0 {
+			min, _ := strconv.ParseFloat(set.OrdonneesMin.Text, 8)
+			if f == min || 0 == f {
 				delete(rawAccel.Data, round)
 			} else {
-				cordon := strconv.FormatFloat(f, 'f', 2, 64)
+				cordon := strconv.FormatFloat(f, 'f', 3, 64)
 				rawAccel.Data[round] = cordon
 			}
 			genAccelRaw()
 		}
 
 		if _, ok := importConf.ConfGraph[currentInc]; ok && loadFromSave && importConf.ConfGraph[currentInc] != 0 {
-			ui.LabelSlider[currentInc] = canvas.NewText(strconv.FormatFloat(importConf.ConfGraph[currentInc], 'f', 2, 64), theme.TextColor())
+			ui.LabelSlider[currentInc] = canvas.NewText(strconv.FormatFloat(importConf.ConfGraph[currentInc], 'f', 3, 64), theme.TextColor())
 		} else {
-			ui.LabelSlider[currentInc] = canvas.NewText("0.00", theme.TextColor())
+			mi := fmt.Sprint(min)
+			ui.LabelSlider[currentInc] = canvas.NewText(mi, theme.TextColor())
 		}
 
 		ui.LabelSlider[currentInc].TextSize = 12
@@ -258,7 +260,8 @@ func saveConfig() {
 	_ = os.Mkdir("configs/", 0755)
 	var exportConf Config
 	exportConf.ConfAbcisses = set.Abcisses.Text
-	exportConf.ConfOrdonnee = set.Ordonnees.Text
+	exportConf.ConfOrdonneesMax = set.OrdonneesMax.Text
+	exportConf.ConfOrdonneesMin = set.OrdonneesMin.Text
 	exportConf.ConfCollumns = set.Collumns.Text
 	exportConf.ConfResult = set.Result.Text
 	exportConf.ConfGraph = make(map[float64]float64)
@@ -292,17 +295,31 @@ func listConfigs() []string {
 }
 
 func loadConfig(conf string) {
-	cfg, err := ioutil.ReadFile("configs/" + conf)
-	errorDialog(err)
+	cfg, _ := ioutil.ReadFile("configs/" + conf)
 	yaml.Unmarshal(cfg, &importConf)
 	set.Abcisses.Text = importConf.ConfAbcisses
+	if set.Abcisses.Text == "" {
+		set.Abcisses.Text = "250"
+	}
 	set.Abcisses.Refresh()
-	set.Ordonnees.Text = importConf.ConfOrdonnee
-	set.Ordonnees.Refresh()
+	set.OrdonneesMax.Text = importConf.ConfOrdonneesMax
+	if set.OrdonneesMax.Text == "" {
+		set.OrdonneesMax.Text = "2"
+	}
+	set.OrdonneesMax.Refresh()
+	set.OrdonneesMin.Text = importConf.ConfOrdonneesMin
+	if set.OrdonneesMin.Text == "" {
+		set.OrdonneesMin.Text = "0"
+	}
+	set.OrdonneesMin.Refresh()
 	set.Collumns.Text = importConf.ConfCollumns
+	if set.Collumns.Text == "" {
+		set.Collumns.Text = "15"
+	}
 	set.Collumns.Refresh()
 	set.Result.Text = importConf.ConfResult
 	set.Result.Refresh()
+	ui.RightContainer.Refresh()
 	genGraph(true)
 }
 
